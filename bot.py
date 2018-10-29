@@ -134,9 +134,7 @@ def get_attachment(attachment):
 
 
 def bot(obj):
-    obj = json.loads(obj)
     attachment = obj['attachments']
-    print(obj)
     base_message = obj['text']  # Сообщение без обработки
     message = obj['text'].lower()
     user = get_user(obj['from_id'])
