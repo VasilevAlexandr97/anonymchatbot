@@ -1,6 +1,6 @@
 import os
 from utils import write_message, keyboard, get_city_vk
-from settings.config import upload
+from settings.config import upload, DEBUG
 from database.models import User, db, Room
 import requests
 import json
@@ -138,7 +138,7 @@ def bot(obj):
     base_message = obj['text']  # Сообщение без обработки
     message = obj['text'].lower()
     user = get_user(obj['from_id'])
-    if message == 'удалить':  # Для разработки
+    if message == 'удалить' and DEBUG is True:  # Для разработки
         clear_bot()
     else:
         if new_profile(user, message) is False:
