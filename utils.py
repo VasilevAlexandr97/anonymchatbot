@@ -8,8 +8,10 @@ def get_city_vk(vk_id):
     """
     r = vk_session.method('users.get', {'user_ids': vk_id,
                                         'fields': 'city'})
-    return r[0]['city']['title'].lower()
-
+    if 'city' in r[0]:
+        return r[0]['city']['title'].lower()
+    else:
+        return None
 
 # Функция отправки сообщения
 def write_message(user_id, msg=None, keyboard=None, attachment=None):

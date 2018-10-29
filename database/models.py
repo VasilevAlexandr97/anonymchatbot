@@ -19,8 +19,11 @@ class User(db.Model):
         :vk_id: id пользователя вконтакте
         :gender: пол пользователя
         :city: город пользователя
-        :count_attempts: количество попыток поиска
+        :count_attempts: количество допустимых попыток поиска
         :time_last_message: время последнего сообщения
+        :referral_code: реферальный код
+        :do_attempts: Сделано попыток поиска
+        :time_last_attempt: время последней попытки
     """
 
     id = db.Column(db.Integer, primary_key=True)
@@ -34,6 +37,7 @@ class User(db.Model):
     referral_code = db.Column(db.String(10),
                     default=''.join(random.choices(string.ascii_uppercase + string.digits, k=10)))
     do_attempts = db.Column(db.Integer, default=0)
+    time_last_attempt = db.Column(db.DateTime)
 
 
 class Room(db.Model):
