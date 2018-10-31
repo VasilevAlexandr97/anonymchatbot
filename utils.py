@@ -13,6 +13,7 @@ def get_city_vk(vk_id):
     else:
         return None
 
+
 # Функция отправки сообщения
 def write_message(user_id, msg=None, keyboard=None, attachment=None):
     vk_session.method('messages.send', {
@@ -27,8 +28,21 @@ def write_message(user_id, msg=None, keyboard=None, attachment=None):
 def keyboard(buttons):
     KEYBOARD = {'one_time': False}
     BUTTONS = []
-    COUNT_BUTTONS = len(buttons)
     for button in buttons:
         BUTTONS.append([{'action': {'type': 'text', 'label': button.capitalize()},'color': 'primary'}])
+    KEYBOARD['buttons'] = BUTTONS
+    return json.dumps(KEYBOARD, ensure_ascii=False)
+
+
+# Функция создает json клавиатуры для вк бота
+# Функция принимает на вход словарь {название кнопоки : команда}
+def keyboard_with_payload(buttons):
+    KEYBOARD = {'one_time': False}
+    BUTTONS = []
+    for button in buttons:
+        BUTTONS.append([{'action': {'type': 'text',
+                                    'payload': json.dumps({'command': buttons[button]}),
+                                    'label': button.capitalize()},
+                        'color': 'primary'}])
     KEYBOARD['buttons'] = BUTTONS
     return json.dumps(KEYBOARD, ensure_ascii=False)

@@ -1,5 +1,5 @@
 import os
-from utils import write_message, keyboard, get_city_vk
+from utils import write_message, keyboard, get_city_vk, keyboard_with_payload
 from settings.config import upload, DEBUG
 from database.models import User, db, Room
 import requests
@@ -7,6 +7,10 @@ import json
 
 
 MENU = ['поиск', 'поиск по полу', 'поиск по городу', 'стоп']
+
+# Кнопка стоп
+STOP = {'Стоп': '/stop'}
+
 
 # Функция очистки бота
 def clear_bot():
@@ -64,22 +68,24 @@ def search_room(user, city=None, search_gender=None, gender_first_user=None):
     elif not created_room and found_room:
         room = found_room
     elif not created_room and not found_room:
-        write_message(user.vk_id, 'Поиск собеседника начался\nЯ оповещу как найдет', keyboard(['Стоп']))
         # Ищем доступную комнату
         if city is not None:
+            write_message(user.vk_id, f'Поиск собеседника по городу {city.title()}\nЯ оповещу как найдет', keyboard_with_payload(STOP))
             room = Room.query.filter_by(second_user_vk_id=None,
                                         city=city).first()
         elif search_gender is not None and gender_first_user is not None:
+            write_message(user.vk_id, f'Поиск собеседника по полу\nЯ оповещу как найдет', keyboard_with_payload(STOP))
             room = Room.query.filter_by(second_user_vk_id=None,
                                         city=city,
                                         search_gender=search_gender,
                                         gender_first_user=gender_first_user).first()
         else:
+            write_message(user.vk_id, f'Поиск случайного собеседника\nЯ оповещу как найдет', keyboard_with_payload(STOP))
             room = Room.query.filter_by(second_user_vk_id=None).first()
         if room:
             room.second_user_vk_id = user.vk_id
-            write_message(room.first_user_vk_id, 'Собеседник найден, можете начать общаться =)', keyboard(['Стоп']))
-            write_message(room.second_user_vk_id, 'Собеседник найден, можете начать общаться =)', keyboard(['Стоп']))
+            write_message(room.first_user_vk_id, 'Собеседник найден, можете начать общаться =)', keyboard_with_payload(STOP))
+            write_message(room.second_user_vk_id, 'Собеседник найден, можете начать общаться =)', keyboard_with_payload(STOP))
         #  Создаем новую комнату
         elif room is None:
             room = Room(first_user_vk_id=user.vk_id,
@@ -134,6 +140,9 @@ def get_attachment(attachment):
 
 
 def bot(obj):
+    payload = None
+    if 'payload' in obj:
+        payload = json.loads(obj['payload'])['command']
     attachment = obj['attachments']
     base_message = obj['text']  # Сообщение без обработки
     message = obj['text'].lower()
@@ -142,45 +151,46 @@ def bot(obj):
         clear_bot()
     else:
         if new_profile(user, message) is False:
-            if message in MENU:
-                user.state = message
-            elif user.state is None:
-                write_message(user.vk_id, 'Выбери в меню чем займемся', keyboard(MENU[:3]))
-            if user.state == 'поиск':
-                if message == 'поиск':
-                    search_room(user)
-            elif user.state == 'поиск по полу':
-                if message == 'м' or message == 'ж' and user.search_gender is None:
-                    user.search_gender = message
-                    search_room(user,
-                                search_gender=user.gender,
-                                gender_first_user=message)
-                elif user.search_gender is None:
-                    write_message(user.vk_id, 'Кого вы хотите найти', keyboard(['м', 'ж']))
-            elif user.state == 'поиск по городу':
-                    search_room(user, city=user.city)
-            elif user.state == 'беседа':
-                room = search_room(user)
-                print(get_attachment(attachment))
-                try:
-                    write_message(get_vk_id_partner(room, user.vk_id),
-                                  f'От собеседника:\n{base_message}',
-                                  keyboard(['стоп']),
-                                  get_attachment(attachment))
-                except BaseException:
-                    write_message(user.vk_id, 'Собеседник еще не найден, подождите чуть-чуть пожалуйста', keyboard(['стоп']))
-            elif user.state == 'стоп':
-                room = search_room(user)
-                user.state = None
-                user.search_gender = None
-                try:
-                    # Остановка поиска, если пользователь уже в беседе
-                    delete_room(room, user.vk_id)
-                    write_message(user.vk_id, 'Вы остановили поиск', keyboard(MENU[:3]))
-                except BaseException:
-                    # Остановка поиска, если пользователь только начал поиск
-                    db.session.delete(room)
-                    write_message(user.vk_id, 'Вы остановили поиск', keyboard(MENU[:3]))
+            if payload:
+                if payload == '/stop':
+                    room = search_room(user)
+                    user.state = None
+                    user.search_gender = None
+                    try:
+                        # Остановка поиска, если пользователь уже в беседе
+                        delete_room(room, user.vk_id)
+                        write_message(user.vk_id, 'Вы остановили поиск', keyboard(MENU[:3]))
+                    except BaseException:
+                        # Остановка поиска, если пользователь только начал поиск
+                        db.session.delete(room)
+                        write_message(user.vk_id, 'Вы остановили поиск', keyboard(MENU[:3]))
+            else:
+                if message in MENU[0:3]:
+                    user.state = message
+                elif user.state is None:
+                    write_message(user.vk_id, 'Выбери в меню чем займемся', keyboard(MENU[:3]))
+                if user.state == 'поиск':
+                    if message == 'поиск':
+                        search_room(user)
+                elif user.state == 'поиск по полу':
+                    if message == 'м' or message == 'ж' and user.search_gender is None:
+                        user.search_gender = message
+                        search_room(user,
+                                    search_gender=user.gender,
+                                    gender_first_user=message)
+                    elif user.search_gender is None:
+                        write_message(user.vk_id, 'Кого вы хотите найти', keyboard(['м', 'ж']))
+                elif user.state == 'поиск по городу':
+                        search_room(user, city=user.city)
+                elif user.state == 'беседа':
+                    room = search_room(user)
+                    try:
+                        write_message(get_vk_id_partner(room, user.vk_id),
+                                      f'От собеседника:\n{base_message}',
+                                      keyboard(['стоп']),
+                                      get_attachment(attachment))
+                    except BaseException:
+                        write_message(user.vk_id, 'Собеседник еще не найден, подождите чуть-чуть пожалуйста', keyboard_with_payload(STOP))
         else:
             pass
     db.session.commit()
