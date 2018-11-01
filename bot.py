@@ -187,7 +187,7 @@ def bot(obj):
                     try:
                         write_message(get_vk_id_partner(room, user.vk_id),
                                       f'От собеседника:\n{base_message}',
-                                      keyboard(['стоп']),
+                                      keyboard_with_payload(STOP),
                                       get_attachment(attachment))
                     except BaseException:
                         write_message(user.vk_id, 'Собеседник еще не найден, подождите чуть-чуть пожалуйста', keyboard_with_payload(STOP))
