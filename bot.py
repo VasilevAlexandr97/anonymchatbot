@@ -8,7 +8,11 @@ import json
 
 MENU = ['поиск', 'поиск по полу', 'поиск по городу', 'стоп']
 
-# Кнопка стоп
+# Кнопки в беседе
+conversation_buttons = {'Стоп': '/stop',
+                        'Поделиться вашим профилем вк': '/sharing_vk'}
+
+#  кнопка стоп
 STOP = {'Стоп': '/stop'}
 
 
@@ -136,10 +140,12 @@ def get_attachment(attachment):
             attachments = f'doc{audio_message[0]["owner_id"]}_{audio_message[0]["id"]}'
         else:
             attachments = f'{attachment_type}{a_owner_id}_{a_id}_{a_key}'
+        print(attachments)
         return attachments
 
 
 def bot(obj):
+    print(obj)
     payload = None
     if 'payload' in obj:
         payload = json.loads(obj['payload'])['command']
@@ -164,6 +170,13 @@ def bot(obj):
                         # Остановка поиска, если пользователь только начал поиск
                         db.session.delete(room)
                         write_message(user.vk_id, 'Вы остановили поиск', keyboard(MENU[:3]))
+                elif payload == '/sharing_vk':
+                    room = search_room(user)
+                    try:
+                        write_message(get_vk_id_partner(room, user.vk_id),
+                                      f'Ваш собеседник поделился своей страницей: vk.com/id{user.vk_id}')
+                    except BaseException:
+                        write_message(user.vk_id, 'Не удалось отпрвить сообщение')
             else:
                 if message in MENU[0:3]:
                     user.state = message
@@ -187,10 +200,11 @@ def bot(obj):
                     try:
                         write_message(get_vk_id_partner(room, user.vk_id),
                                       f'От собеседника:\n{base_message}',
-                                      keyboard_with_payload(STOP),
+                                      keyboard_with_payload(conversation_buttons),
                                       get_attachment(attachment))
                     except BaseException:
-                        write_message(user.vk_id, 'Собеседник еще не найден, подождите чуть-чуть пожалуйста', keyboard_with_payload(STOP))
+                        write_message(user.vk_id, 'Собеседник еще не найден, подождите чуть-чуть пожалуйста',
+                                      keyboard_with_payload(conversation_buttons))
         else:
             pass
     db.session.commit()
