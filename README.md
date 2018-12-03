@@ -1,5 +1,5 @@
 # anonymchatbot
-
+https://vk.com/anonymchatbot - Посмотреть как работает можно тут.
 После установки:
 1 - Перейти в папку database
 2 - export FLASK_APP=models.py
