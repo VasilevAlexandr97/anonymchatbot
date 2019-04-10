@@ -1,5 +1,5 @@
 # anonymchatbot
-https://vk.com/anonymchatbot - Посмотреть как работает можно тут.
+https://vk.com/anonymchatbot уже не работает т.к я просто тестировал возможности ботов в вк.
 
 После установки:
 
